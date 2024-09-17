@@ -1,10 +1,11 @@
 package sttp.tapir.client.http4s
 
 import cats.effect.IO
-import org.http4s.dom.FetchClientBuilder
+import org.http4s.blaze.client.BlazeClientBuilder
 import org.http4s.{Request, Response, Uri}
 import sttp.tapir.client.tests.ClientTests
 import sttp.tapir.{DecodeResult, Endpoint}
+import scala.concurrent.ExecutionContext.global
 
 abstract class Http4sClientTests[R] extends ClientTests[R] {
   override def send[A, I, E, O](
@@ -34,5 +35,7 @@ abstract class Http4sClientTests[R] extends ClientTests[R] {
   }
 
   private def sendAndParseResponse[Result](request: Request[IO], parseResponse: Response[IO] => IO[Result]) =
-    FetchClientBuilder[IO].create.run(request).use(parseResponse)
+    BlazeClientBuilder[IO](global).resource.use { client =>
+      client.run(request).use(parseResponse)
+    }
 }
